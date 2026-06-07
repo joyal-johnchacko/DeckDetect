@@ -1,6 +1,6 @@
 # 🃏 DeckDetect — AI Playing Card Classifier
 
-> **Live Demo:** [Click here to try DeckDetect](#) ← paste your Render link here
+> **Live Demo:** https://deckdetect.onrender.com/ <-Click here
 
 ![Python](https://img.shields.io/badge/Python-3.8+-blue?style=flat-square&logo=python)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red?style=flat-square&logo=pytorch)
