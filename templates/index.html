@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DeckDetect</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@400;500;600&display=swap');
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #0a0a0f;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+
+        /* Animated background grid */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(0,255,200,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0,255,200,0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            z-index: 0;
+        }
+
+        /* Glow orbs */
+        body::after {
+            content: '';
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0,255,180,0.06) 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .orb2 {
+            position: fixed;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(180,0,255,0.06) 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .wrapper {
+            position: relative;
+            z-index: 1;
+            width: 90%;
+            max-width: 560px;
+            padding: 20px 0;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+
+        .logo {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.8rem;
+            font-weight: 900;
+            letter-spacing: 4px;
+            background: linear-gradient(90deg, #00ffcc, #a855f7, #00ffcc);
+            background-size: 200% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: shimmer 3s linear infinite;
+            text-shadow: none;
+            display: block;
+        }
+
+        @keyframes shimmer {
+            to { background-position: 200% center; }
+        }
+
+        .logo-sub {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 8px;
+            color: rgba(0,255,200,0.5);
+            margin-top: 6px;
+            display: block;
+        }
+
+        /* Card container */
+        .card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid rgba(0,255,200,0.15);
+            border-radius: 20px;
+            padding: 36px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,200,0.4), transparent);
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            background: rgba(255,180,0,0.07);
+            border: 1px solid rgba(255,180,0,0.2);
+            border-radius: 10px;
+            padding: 10px 16px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.82rem;
+            color: rgba(255,200,80,0.8);
+            letter-spacing: 0.3px;
+        }
+
+        .disclaimer .dot {
+            width: 6px;
+            height: 6px;
+            background: #ffb800;
+            border-radius: 50%;
+            flex-shrink: 0;
+            box-shadow: 0 0 6px #ffb800;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+
+        /* Upload area */
+        .upload-area {
+            border: 1px dashed rgba(0,255,200,0.25);
+            border-radius: 14px;
+            padding: 36px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            background: rgba(0,255,200,0.01);
+            position: relative;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(0,255,200,0.6);
+            background: rgba(0,255,200,0.03);
+            box-shadow: 0 0 20px rgba(0,255,200,0.05), inset 0 0 20px rgba(0,255,200,0.02);
+        }
+
+        .upload-icon {
+            font-size: 2.5rem;
+            margin-bottom: 12px;
+            display: block;
+            filter: drop-shadow(0 0 8px rgba(0,255,200,0.5));
+        }
+
+        .upload-area h3 {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.8rem;
+            color: rgba(0,255,200,0.7);
+            letter-spacing: 2px;
+            margin-bottom: 6px;
+        }
+
+        .upload-area p {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.25);
+            letter-spacing: 1px;
+        }
+
+        #fileInput { display: none; }
+
+        /* Preview */
+        #preview {
+            display: none;
+            width: 100%;
+            max-height: 260px;
+            object-fit: contain;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(0,255,200,0.15);
+            box-shadow: 0 0 30px rgba(0,255,200,0.05);
+        }
+
+        /* Button */
+        .btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 12px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.85rem;
+            font-weight: 700;
+            letter-spacing: 3px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #00ffcc, #a855f7);
+            color: #0a0a0f;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .btn:hover::after { opacity: 1; }
+        .btn:hover { box-shadow: 0 0 25px rgba(0,255,200,0.3); transform: translateY(-1px); }
+        .btn:disabled {
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.2);
+            cursor: not-allowed;
+            box-shadow: none;
+            transform: none;
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+
+        /* Loading */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px 0;
+        }
+
+        .scanner {
+            width: 60px;
+            height: 60px;
+            border: 2px solid rgba(0,255,200,0.1);
+            border-top: 2px solid #00ffcc;
+            border-radius: 50%;
+            margin: 0 auto 14px;
+            animation: spin 0.8s linear infinite;
+            box-shadow: 0 0 15px rgba(0,255,200,0.2);
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .loading p {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.7rem;
+            letter-spacing: 3px;
+            color: rgba(0,255,200,0.6);
+            animation: blink 1.2s ease-in-out infinite;
+        }
+
+        @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+        /* Result */
+        #result {
+            display: none;
+        }
+
+        .result-box {
+            background: rgba(0,255,200,0.04);
+            border: 1px solid rgba(0,255,200,0.2);
+            border-radius: 14px;
+            padding: 24px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .result-box::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #00ffcc, transparent);
+        }
+
+        .result-label {
+            font-family: 'Orbitron', monospace;
+            font-size: 0.6rem;
+            letter-spacing: 4px;
+            color: rgba(0,255,200,0.4);
+            margin-bottom: 10px;
+        }
+
+        .result-card-name {
+            font-family: 'Orbitron', monospace;
+            font-size: 1.6rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            background: linear-gradient(90deg, #00ffcc, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 8px;
+        }
+
+        .result-emoji {
+            font-size: 2.4rem;
+            margin-bottom: 10px;
+            display: block;
+            filter: drop-shadow(0 0 10px rgba(0,255,200,0.4));
+        }
+
+        .scan-line {
+            position: absolute;
+            left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(0,255,200,0.4), transparent);
+            animation: scanDown 2s ease-in-out infinite;
+            top: 0;
+        }
+
+        @keyframes scanDown {
+            0% { top: 0; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        /* corner accents */
+        .corner {
+            position: absolute;
+            width: 12px; height: 12px;
+        }
+        .corner-tl { top: 8px; left: 8px; border-top: 1px solid #00ffcc; border-left: 1px solid #00ffcc; }
+        .corner-tr { top: 8px; right: 8px; border-top: 1px solid #00ffcc; border-right: 1px solid #00ffcc; }
+        .corner-bl { bottom: 8px; left: 8px; border-bottom: 1px solid #00ffcc; border-left: 1px solid #00ffcc; }
+        .corner-br { bottom: 8px; right: 8px; border-bottom: 1px solid #00ffcc; border-right: 1px solid #00ffcc; }
+
+        .reset-btn {
+            background: transparent;
+            border: 1px solid rgba(0,255,200,0.2);
+            color: rgba(0,255,200,0.5);
+            padding: 10px;
+            width: 100%;
+            border-radius: 10px;
+            font-family: 'Orbitron', monospace;
+            font-size: 0.65rem;
+            letter-spacing: 3px;
+            cursor: pointer;
+            margin-top: 14px;
+            transition: all 0.3s;
+        }
+
+        .reset-btn:hover {
+            border-color: rgba(0,255,200,0.5);
+            color: #00ffcc;
+            box-shadow: 0 0 10px rgba(0,255,200,0.1);
+        }
+    </style>
+</head>
+<body>
+<div class="orb2"></div>
+
+<div class="wrapper">
+    <div class="header">
+        <span class="logo">DECK DETECT</span>
+        <span class="logo-sub">AI PLAYING CARD IDENTIFIER</span>
+    </div>
+
+    <div class="card">
+        <div class="corner corner-tl"></div>
+        <div class="corner corner-tr"></div>
+        <div class="corner corner-bl"></div>
+        <div class="corner corner-br"></div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <div class="dot"></div>
+            This is not a 100% trained model — it can make mistakes. Results are AI predictions only.
+        </div>
+
+        <!-- Upload -->
+        <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <span class="upload-icon">♠</span>
+            <h3>UPLOAD CARD IMAGE</h3>
+            <p>JPG · PNG · WEBP SUPPORTED</p>
+        </div>
+        <input type="file" id="fileInput" accept="image/*">
+
+        <!-- Preview -->
+        <img id="preview" src="" alt="Card preview">
+
+        <!-- Identify Button -->
+        <button class="btn" id="predictBtn" onclick="predict()" disabled>
+            IDENTIFY CARD
+        </button>
+
+        <!-- Loading -->
+        <div class="loading" id="loading">
+            <div class="scanner"></div>
+            <p>SCANNING CARD...</p>
+        </div>
+
+        <!-- Result -->
+        <div id="result">
+            <div class="result-box">
+                <div class="scan-line"></div>
+                <div class="result-label">CARD IDENTIFIED</div>
+                <span class="result-emoji" id="resultEmoji">♠</span>
+                <div class="result-card-name" id="resultName">—</div>
+            </div>
+            <button class="reset-btn" onclick="resetAll()">⟳ SCAN ANOTHER CARD</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const suitEmoji = {
+        'hearts': '♥', 'diamonds': '♦',
+        'clubs': '♣', 'spades': '♠', 'joker': '★'
+    };
+
+    function getEmoji(cardName) {
+        for (const [suit, emoji] of Object.entries(suitEmoji)) {
+            if (cardName.includes(suit)) return emoji;
+        }
+        return '♠';
+    }
+
+    document.getElementById('fileInput').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+            const preview = document.getElementById('preview');
+            preview.src = ev.target.result;
+            preview.style.display = 'block';
+            document.getElementById('uploadArea').style.display = 'none';
+            document.getElementById('predictBtn').disabled = false;
+            document.getElementById('result').style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+    });
+
+    async function predict() {
+        const file = document.getElementById('fileInput').files[0];
+        if (!file) return;
+
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('predictBtn').disabled = true;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/predict', { method: 'POST', body: formData });
+            const data = await response.json();
+            if (data.error) { alert('Error: ' + data.error); return; }
+            const top = data.predictions[0];
+            document.getElementById('resultEmoji').textContent = getEmoji(top.card);
+            document.getElementById('resultName').textContent = top.card.toUpperCase();
+            document.getElementById('result').style.display = 'block';
+        } catch(err) {
+            alert('Make sure Flask server is running!');
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('predictBtn').disabled = false;
+        }
+    }
+
+    function resetAll() {
+        document.getElementById('preview').style.display = 'none';
+        document.getElementById('uploadArea').style.display = 'block';
+        document.getElementById('result').style.display = 'none';
+        document.getElementById('predictBtn').disabled = true;
+        document.getElementById('fileInput').value = '';
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+dataset/
+CardClassifier/
+.venv/
+.idea/
+__pycache__/
+training_graph.png
